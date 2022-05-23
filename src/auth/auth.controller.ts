@@ -21,10 +21,13 @@ export class AuthController {
   // Prevents reusability
   // use NestJS' @Body dto: x
 
+  // Pipes
+  // Function that handles data from requests
+
   @Post('signup')
   signup(@Body() dto: AuthDto) {
     console.log({ dto });
-    return this.authService.signup();
+    return this.authService.signup(dto);
   }
 
   @Post('signin')
