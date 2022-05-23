@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { AuthDto } from './dto';
+import * as argon from 'argon2';
 
 // Gets "injected" to whatever called it in the controller file
 // Don't worry about specifying what data type to return!
@@ -16,8 +18,29 @@ export class AuthService {
     console.log('hello!');
   }
 
-  signup() {
-    return { msg: 'Signup' };
+  async signup(dto: AuthDto) {
+    // generate pwd hash
+    const hash = await argon.hash(dto.password);
+
+    // save new user in db
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        hash,
+      },
+      // Below is unoptimal - will need to do this in every db operation
+      // select: {
+      //   id: true,
+      //   email: true,
+      //   createdAt: true,
+      // },
+    });
+
+    // Below is dirty, will replace with transformer later
+    delete user.hash;
+
+    // return saved user
+    return user;
   }
 
   signin() {
