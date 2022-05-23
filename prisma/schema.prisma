@@ -16,11 +16,20 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  email String
+  email String @unique
   hash String
 
   firstName String?
   lastName String?
+
+  // Opposite relation field
+  // Add after @relation in other model is made
+  bookmarks Bookmark[]
+
+  // According to video, Prisma prefers plural???
+  // Prisma doc recommends singular form though???
+  // Use below to send data to a table with slightly different name
+  @@map("users")
 }
 
 model Bookmark {
@@ -31,4 +40,9 @@ model Bookmark {
   title String
   description String?
   link String
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  @@map("bookmarks")
 }
