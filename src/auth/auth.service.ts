@@ -3,6 +3,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthDto } from './dto';
 import * as argon from 'argon2';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 // Gets "injected" to whatever called it in the controller file
 // Don't worry about specifying what data type to return!
@@ -13,7 +15,11 @@ export class AuthService {
   // Because PrismaModule isn't actually exporting PrismaService
   // This also means you have to do it in all other modules (User, Bookmark, etc.)
   // Solution is @Global in PrismaModule
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwt: JwtService,
+    private config: ConfigService,
+  ) {}
 
   test() {
     console.log('hello!');
@@ -30,19 +36,10 @@ export class AuthService {
           email: dto.email,
           hash,
         },
-        // Below is unoptimal - will need to do this in every db operation
-        // select: {
-        //   id: true,
-        //   email: true,
-        //   createdAt: true,
-        // },
       });
 
-      // Below is dirty, will replace with transformer later
-      delete user.hash;
-
-      // - return saved user
-      return user;
+      // - return user token
+      return this.signToken(user.id, user.email);
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         // Error with Request
@@ -76,7 +73,28 @@ export class AuthService {
     if (!pwMatches) throw new ForbiddenException('Credentials incorrect');
 
     // send user back
-    delete user.hash;
-    return user;
+    return this.signToken(user.id, user.email);
+  }
+
+  // Token
+  async signToken(
+    userId: number,
+    email: string,
+  ): Promise<{ access_token: string }> {
+    // "sub" is standard JWT naming convention - unique id for subfields
+    const payload = {
+      sub: userId,
+      email,
+    };
+    const secret = this.config.get('JWT_SECRET');
+
+    const token = await this.jwt.signAsync(payload, {
+      expiresIn: '15m',
+      secret: secret,
+    });
+
+    return {
+      access_token: token,
+    };
   }
 }
