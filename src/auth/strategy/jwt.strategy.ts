@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 // JwtStrategy taken from NestJS documentation
 // Don't need expiration, false by default
@@ -11,11 +12,21 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 // Strategy is separated in a different folder
 // as it is used for 1 specific use case
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(config: ConfigService) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+  constructor(config: ConfigService, private prisma: PrismaService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: config.get('JWT_SECRET'),
     });
+  }
+
+  async validate(payload: { sub: number; email: string }) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: payload.sub,
+      },
+    });
+    delete user.hash;
+    return user;
   }
 }

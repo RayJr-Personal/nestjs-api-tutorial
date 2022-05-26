@@ -1,11 +1,23 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import { User } from '@prisma/client';
+import { GetUser } from 'src/auth/decorator';
+import { JwtGuard } from 'src/auth/guard/jwt.guard';
 
-// Plural (NestJS)
+@UseGuards(JwtGuard)
+// Route is plural (NestJS)
 @Controller('users')
 export class UserController {
-  @UseGuards(AuthGuard('jwt'))
+  // @UseGuards hecks & processes requests
+  // AuthGuard('jwt') links to JwtStrategy > PaswordStrategy's parameter
+  // parameter is 'jwt' by default if not specified but can be changed
+  // Similar to ids
+  // AuthGuard gets replaced by JwtGuard (custom guard) for
+
   @Get('me')
-  getMe() {
-    return 'user info';
+  getMe(@GetUser() user: User) {
+    return user;
   }
+
+  @Patch()
+  editUser() {}
 }
