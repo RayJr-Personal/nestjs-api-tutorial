@@ -16,4 +16,13 @@ export class PrismaService extends PrismaClient {
     });
     console.log(config.get('DATABASE_URL'));
   }
+
+  // Delete bookmarks THEN users
+  // $transaction ensures execution order is followed, top to bottom
+  cleanDb() {
+    return this.$transaction([
+      this.bookmark.deleteMany(),
+      this.user.deleteMany(),
+    ]);
+  }
 }
