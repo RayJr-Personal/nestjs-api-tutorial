@@ -37,4 +37,4 @@ lerna-debug.log*
 # Custom
 .env
 .env.test
-docker-compose.yaml
+docker-compose.yml
